@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: chaos-monkey-for-spring-poc
+  datasource:
+    url: jdbc:postgresql://localhost:5432/chaosdb
+    username: chaosuser
+    password: chaospass
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+chaos:
+  monkey:
+    enabled: true
+    watcher:
+      restController: true
+      repository: true
+      service: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,chaosmonkey
