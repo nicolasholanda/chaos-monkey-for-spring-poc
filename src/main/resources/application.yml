@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    active: chaos-monkey
   application:
     name: chaos-monkey-for-spring-poc
   datasource:
@@ -17,11 +19,18 @@ chaos:
     enabled: true
     watcher:
       restController: true
-      repository: true
       service: true
+      repository: true
+    assaults:
+      latencyActive: true
 
 management:
+  endpoint:
+    chaosmonkey:
+      enabled: true
+    chaosmonkeyjmx:
+      enabled: true
   endpoints:
     web:
       exposure:
-        include: health,info,chaosmonkey
+        include: "*"
