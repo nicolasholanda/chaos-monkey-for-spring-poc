@@ -22,7 +22,16 @@ chaos:
       service: true
       repository: true
     assaults:
+      level: 2
+      deterministic: true
       latencyActive: true
+      latencyRangeStart: 2000
+      latencyRangeEnd: 3000
+      exceptionsActive: true
+      memoryActive: true
+      memoryMillisecondsHoldFilledMemory: 10000
+      cpuActive: true
+      cpuMillisecondsHoldLoad: 10000
 
 management:
   endpoint:
