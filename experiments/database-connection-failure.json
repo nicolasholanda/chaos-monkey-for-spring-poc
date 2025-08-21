@@ -1,0 +1,119 @@
+{
+  "version": "1.0.0",
+  "title": "Database Connection Failure Experiment",
+  "description": "Test application resilience when PostgreSQL database becomes unavailable",
+  "tags": [
+    "database",
+    "postgresql",
+    "connection",
+    "resilience"
+  ],
+  "steady-state-hypothesis": {
+    "title": "Application responds normally when database is available",
+    "probes": [
+      {
+        "name": "application-health-check",
+        "type": "probe",
+        "provider": {
+          "type": "http",
+          "url": "http://localhost:8080/actuator/health",
+          "timeout": 5
+        },
+        "tolerance": 200
+      },
+      {
+        "name": "user-api-responds",
+        "type": "probe",
+        "provider": {
+          "type": "http",
+          "url": "http://localhost:8080/users/1",
+          "method": "GET",
+          "timeout": 5
+        },
+        "tolerance": [200, 404]
+      }
+    ]
+  },
+  "method": [
+    {
+      "type": "action",
+      "name": "stop-postgresql-container",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": ["stop", "chaos-postgres"]
+      }
+    },
+    {
+      "type": "probe",
+      "name": "verify-database-unavailable",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": ["ps", "-q", "-f", "name=chaos-postgres"]
+      },
+      "tolerance": {
+        "type": "regex",
+        "pattern": "^$"
+      }
+    },
+    {
+      "type": "probe",
+      "name": "application-handles-db-failure",
+      "provider": {
+        "type": "http",
+        "url": "http://localhost:8080/users/1",
+        "method": "GET",
+        "timeout": 30
+      },
+      "tolerance": [500, 503]
+    },
+    {
+      "type": "probe",
+      "name": "create-user-fails-gracefully",
+      "provider": {
+        "type": "http",
+        "url": "http://localhost:8080/users",
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "arguments": {
+          "body": "{\"name\": \"Test User\", \"email\": \"test@example.com\"}"
+        },
+        "timeout": 30
+      },
+      "tolerance": [500, 503]
+    }
+  ],
+  "rollbacks": [
+    {
+      "type": "action",
+      "name": "restart-postgresql-container",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": ["start", "chaos-postgres"]
+      }
+    },
+    {
+      "type": "probe",
+      "name": "wait-for-database-recovery",
+      "provider": {
+        "type": "process",
+        "path": "sleep",
+        "arguments": ["5"]
+      }
+    },
+    {
+      "type": "probe",
+      "name": "verify-application-recovery",
+      "provider": {
+        "type": "http",
+        "url": "http://localhost:8080/actuator/health",
+        "timeout": 15
+      },
+      "tolerance": 200
+    }
+  ]
+}
